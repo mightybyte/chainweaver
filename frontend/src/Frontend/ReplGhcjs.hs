@@ -69,6 +69,7 @@ import Frontend.UI.Modal
 import Frontend.UI.Modal.Impl
 import Frontend.UI.RightPanel
 import Frontend.UI.Settings
+import Frontend.UI.Transfer
 import Frontend.UI.Wallet
 import Frontend.UI.Widgets
 
@@ -100,12 +101,14 @@ app sidebarExtra fileFFI appCfg = Store.versionedFrontend (Store.versionedStorag
     -- yet.
     route <- askRoute
     routedCfg <- subRoute $ lift . flip runRoutedT route . \case
-      FrontendRoute_Accounts -> mkPageContent "accounts" $ do
-        barCfg <- controlBar "Accounts" $ do
+      FrontendRoute_Accounts -> mkPageContent "accounts" $ mdo
+        (transferVisible, barCfg) <- controlBar "Accounts" $ do
           refreshCfg <- uiWalletRefreshButton
+          xferVisible <- uiTransferButton
           watchCfg <- uiWatchRequestButton ideL
           addCfg <- uiAddAccountButton ideL
-          pure $ watchCfg <> addCfg <> refreshCfg
+          pure $ (xferVisible, watchCfg <> addCfg <> refreshCfg)
+        uiGenericTransfer ideL $ TransferCfg transferVisible
         accountsCfg <- uiAccountsTable ideL
         pure $ barCfg <> accountsCfg
       FrontendRoute_Keys -> mkPageContent "keys" $ do
@@ -138,6 +141,7 @@ app sidebarExtra fileFFI appCfg = Store.versionedFrontend (Store.versionedStorag
           uiSettings (_appCfg_enabledSettings appCfg) ideL fileFFI
         pure $ controlCfg <> mainCfg
 
+    accountDatalist ideL
     flattenedCfg <- flatten =<< tagOnPostBuild routedCfg
     pure $ netCfg <> flattenedCfg
 

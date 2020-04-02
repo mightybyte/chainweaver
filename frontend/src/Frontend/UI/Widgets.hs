@@ -387,11 +387,14 @@ uiNonnegativeRealWithPrecisionInputElement eReset prec fromDecimal cfg = do
 
   where
     stepSize = "0." <> T.replicate (fromIntegral prec - 1) "0" <> "1"
-    parse t = tread $
-      if "." `T.isPrefixOf` t && not (T.any (== '.') $ T.tail t) then
-        T.cons '0' t
-      else
-        t
+
+    parse t = tread $ case T.splitOn "." t of
+      ["",""] -> "0.0"
+      -- ".1" -> "1.0"
+      ["", t'] -> "0" <> "." <> t'
+      -- "1." -> "1.0"
+      [t', ""] -> t' <> "." <> "0"
+      _ -> t
 
     blurSanitize :: Decimal -> Maybe (Decimal, Text)
     blurSanitize decimal = asum
